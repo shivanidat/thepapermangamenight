@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cartoon.co — Aerodynamic Failure</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0d10;--surface:#16161c;--border:#28283a;--gold:#F5C518;--cream:#FFFDE7;--text:#f0ede8;--muted:#888;--mp:#FFB800;--ms:#CC1B1B}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;overflow:hidden}
+
+.screen{display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;position:relative;text-align:center}
+.screen.active{display:flex}
+.screen::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 30%,rgba(245,197,24,.05) 0%,transparent 55%),radial-gradient(ellipse at 80% 70%,rgba(204,27,27,.05) 0%,transparent 55%);pointer-events:none}
+.inner{position:relative;z-index:1;width:100%;max-width:560px}
+.eyebrow{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:block}
+.big{font-family:'Bangers',cursive;line-height:.88;color:var(--gold);text-shadow:4px 4px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000;display:block}
+.sub{font-family:'Bangers',cursive;color:var(--muted);letter-spacing:4px;margin-bottom:28px;display:block}
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:24px 22px;margin-bottom:16px;text-align:left}
+.btn{width:100%;border:none;border-radius:12px;font-family:'Bangers',cursive;letter-spacing:4px;padding:16px;cursor:pointer;box-shadow:5px 5px 0 #000;transition:transform .12s,box-shadow .12s;-webkit-tap-highlight-color:transparent;display:block}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 #000}
+.btn:active{transform:translate(2px,2px);box-shadow:3px 3px 0 #000}
+.btn-gold{background:var(--gold);color:#000;font-size:clamp(20px,4vw,26px)}
+.btn-red{background:var(--ms);color:var(--gold);font-size:clamp(20px,4vw,26px);text-shadow:2px 2px 0 rgba(0,0,0,.3)}
+.btn-ghost{background:transparent;border:1.5px solid var(--border);border-radius:12px;color:var(--muted);font-family:'Bangers',cursive;font-size:18px;letter-spacing:3px;padding:12px;cursor:pointer;width:100%;transition:border-color .15s,color .15s;box-shadow:none}
+.btn-ghost:hover{border-color:var(--mp);color:var(--mp);transform:none;box-shadow:none}
+
+/* INTRO */
+.plane-icon{font-size:80px;display:block;margin-bottom:16px;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-16px) rotate(5deg)}}
+.rule{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.rule:last-child{border-bottom:none}
+.rule-num{font-family:'Bangers',cursive;font-size:22px;color:var(--ms);min-width:32px;flex-shrink:0}
+.rule-text{font-size:14px;font-weight:700;color:var(--text);line-height:1.5}
+
+/* FOLD COUNTDOWN */
+#fold .big{font-size:clamp(100px,28vw,180px);letter-spacing:0}
+#fold .big.warning{color:var(--ms);animation:shake .3s ease infinite}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.fold-label{font-family:'Bangers',cursive;font-size:clamp(18px,5vw,28px);color:var(--muted);letter-spacing:4px;margin-bottom:8px;display:block}
+.fold-instruction{font-family:'Bangers',cursive;font-size:clamp(20px,5vw,30px);color:var(--text);letter-spacing:3px;margin-bottom:24px;display:block;animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.progress-wrap{width:100%;background:var(--border);border-radius:99px;height:10px;margin-bottom:24px;overflow:hidden}
+.progress-fill{height:100%;border-radius:99px;transition:width .5s linear;width:100%}
+
+/* LAUNCH COUNTDOWN */
+#launch{background:var(--bg)}
+#launch::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(204,27,27,.15) 0%,transparent 60%);pointer-events:none}
+.launch-num{font-family:'Bangers',cursive;font-size:clamp(160px,45vw,280px);line-height:1;color:var(--ms);text-shadow:8px 8px 0 #000,-4px -4px 0 #000,4px -4px 0 #000,-4px 4px 0 #000;animation:launchPop .3s ease;display:block}
+@keyframes launchPop{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+.launch-label{font-family:'DM Mono',monospace;font-size:13px;letter-spacing:5px;text-transform:uppercase;color:var(--muted)}
+
+/* THROW */
+#throwit{background:var(--ms)}
+#throwit::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(245,197,24,.2) 0%,transparent 60%);pointer-events:none}
+.throw-text{font-family:'Bangers',cursive;font-size:clamp(64px,18vw,120px);line-height:.88;color:var(--gold);text-shadow:6px 6px 0 #000;letter-spacing:5px;animation:throwBounce .4s ease infinite alternate;display:block}
+@keyframes throwBounce{0%{transform:scale(1) rotate(-2deg)}100%{transform:scale(1.05) rotate(2deg)}}
+.throw-sub{font-family:'Bangers',cursive;font-size:clamp(20px,5vw,30px);color:#fff;letter-spacing:3px;margin-top:8px;display:block}
+
+/* VOTE */
+.vote-title{font-family:'Bangers',cursive;font-size:clamp(36px,9vw,60px);color:var(--gold);text-shadow:4px 4px 0 #000;letter-spacing:4px;display:block;margin-bottom:6px}
+.name-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.name-inp{width:100%;background:#0d0d10;border:2px solid var(--border);border-radius:8px;color:var(--text);font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;padding:11px 14px;outline:none;transition:border-color .2s;-webkit-appearance:none}
+.name-inp::placeholder{color:var(--muted)}.name-inp:focus{border-color:var(--gold)}
+.add-name-btn{background:transparent;border:1.5px dashed var(--border);border-radius:8px;color:var(--muted);font-family:'Bangers',cursive;font-size:16px;letter-spacing:2px;padding:11px;cursor:pointer;width:100%;margin-bottom:12px;transition:border-color .15s,color .15s}
+.add-name-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* VOTING CARDS */
+.vote-card{background:var(--surface);border:3px solid var(--border);border-radius:14px;padding:20px;text-align:center;cursor:pointer;transition:border-color .15s,transform .1s,box-shadow .1s;-webkit-tap-highlight-color:transparent;margin-bottom:10px}
+.vote-card:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.vote-card.voted{border-color:var(--ms);background:#1a0808}
+.vote-name{font-family:'Bangers',cursive;font-size:28px;color:var(--text);letter-spacing:2px;margin-bottom:6px}
+.vote-count{font-family:'Bangers',cursive;font-size:18px;color:var(--ms)}
+.vote-bar{height:6px;background:var(--border);border-radius:99px;margin-top:8px;overflow:hidden}
+.vote-bar-fill{height:100%;background:var(--ms);border-radius:99px;transition:width .4s}
+
+/* WINNER */
+.trophy{font-size:80px;display:block;animation:trophyBounce 1s ease-in-out infinite}
+@keyframes trophyBounce{0%,100%{transform:scale(1) rotate(-5deg)}50%{transform:scale(1.1) rotate(5deg)}}
+.winner-name{font-family:'Bangers',cursive;font-size:clamp(48px,13vw,88px);color:var(--gold);text-shadow:4px 4px 0 #000;letter-spacing:4px;display:block;line-height:.9}
+.winner-label{font-family:'DM Mono',monospace;font-size:12px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:16px;display:block}
+
+/* error */
+#errToast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#9b1c1c;color:#fff;font-family:'DM Mono',monospace;font-size:13px;padding:12px 24px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.5);display:none;z-index:999;text-align:center;max-width:min(90vw,400px)}
+#errToast.show{display:block}
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="intro" class="screen active">
+  <div class="inner">
+    <span class="eyebrow">🎬 cartoon.co play — post show</span>
+    <span class="plane-icon">✈️</span>
+    <span class="big" style="font-size:clamp(40px,10vw,72px)">AERODYNAMIC FAILURE</span>
+    <span class="sub" style="font-size:clamp(14px,3.5vw,18px);margin-top:8px">the world's worst paper airplane contest</span>
+    <div class="card">
+      <div class="rule"><span class="rule-num">1</span><span class="rule-text">When the timer starts — grab ANY scrap paper at your desk and fold a paper airplane. You have <strong style="color:var(--gold)">60 seconds.</strong></span></div>
+      <div class="rule"><span class="rule-num">2</span><span class="rule-text">Turn your <strong style="color:var(--gold)">webcam ON</strong> and hold your plane up to the screen.</span></div>
+      <div class="rule"><span class="rule-num">3</span><span class="rule-text">On <strong style="color:var(--ms)">LAUNCH!</strong> — throw your plane straight into the webcam lens. Most spectacular crash wins! ✈️💥</span></div>
+    </div>
+    <button class="btn btn-gold" onclick="startFold()">✈️ START THE CONTEST</button>
+  </div>
+</div>
+
+<!-- FOLD COUNTDOWN -->
+<div id="fold" class="screen">
+  <div class="inner">
+    <span class="eyebrow">⏱ fold your plane</span>
+    <span class="fold-instruction" id="foldInstruction">GRAB PAPER — START FOLDING!</span>
+    <span class="big" id="foldTimer">60</span>
+    <div class="progress-wrap">
+      <div class="progress-fill" id="foldProgress" style="background:var(--gold);width:100%"></div>
+    </div>
+    <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:3px">TURN ON YOUR WEBCAM NOW</span>
+  </div>
+</div>
+
+<!-- HOLD UP -->
+<div id="holdup" class="screen">
+  <div class="inner">
+    <span class="eyebrow">ready to launch</span>
+    <span style="font-size:72px;display:block;margin-bottom:16px">✋</span>
+    <span class="big" style="font-size:clamp(44px,11vw,72px)">HOLD YOUR PLANE UP!</span>
+    <p style="font-family:'Bangers',cursive;font-size:clamp(18px,4vw,24px);color:var(--muted);letter-spacing:3px;margin-top:12px;margin-bottom:28px">Point it straight at your webcam lens</p>
+    <button class="btn btn-red" onclick="startLaunch()">🚀 BEGIN LAUNCH SEQUENCE</button>
+  </div>
+</div>
+
+<!-- 3 2 1 LAUNCH -->
+<div id="launch" class="screen">
+  <div class="inner">
+    <span class="launch-label">launching in</span>
+    <span class="launch-num" id="launchNum">3</span>
+  </div>
+</div>
+
+<!-- THROW -->
+<div id="throwit" class="screen">
+  <div class="inner">
+    <span class="throw-text">LAUNCH!</span>
+    <span class="throw-sub">✈️ THROW IT NOW! ✈️</span>
+  </div>
+</div>
+
+<!-- VOTE SETUP -->
+<div id="voteSetup" class="screen">
+  <div class="inner">
+    <span class="eyebrow">🏆 who had the best crash?</span>
+    <span class="vote-title">VOTE FOR THE<br>WINNER</span>
+    <div class="card">
+      <p style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:14px">Add the names of everyone who threw their plane:</p>
+      <div id="namesGrid" class="name-grid"></div>
+      <button class="add-name-btn" onclick="addNameField()">+ Add player</button>
+    </div>
+    <button class="btn btn-gold" onclick="startVoting()">🗳️ START VOTING</button>
+  </div>
+</div>
+
+<!-- VOTING -->
+<div id="voting" class="screen">
+  <div class="inner">
+    <span class="eyebrow">🗳️ vote for best crash</span>
+    <span class="vote-title" style="margin-bottom:16px">WHO WINS?</span>
+    <div id="voteCards"></div>
+    <br>
+    <button class="btn btn-gold" onclick="showWinner()">🏆 REVEAL WINNER</button>
+  </div>
+</div>
+
+<!-- WINNER -->
+<div id="winner" class="screen">
+  <div class="inner">
+    <span class="eyebrow">🎬 cartoon.co play</span>
+    <span class="trophy">🏆</span>
+    <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;display:block">aerodynamic failure champion</span>
+    <span class="winner-name" id="winnerName">---</span>
+    <p style="font-family:'Bangers',cursive;font-size:20px;color:var(--muted);letter-spacing:3px;margin-top:12px;margin-bottom:24px">MOST SPECTACULAR CRASH! ✈️💥</p>
+    <button class="btn btn-gold" onclick="playAgain()">🔄 PLAY AGAIN</button>
+  </div>
+</div>
+
+<div id="errToast"></div>
+
+<script>
+let foldInterval=null, votes={};
+
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function showErr(msg){const e=document.getElementById('errToast');e.textContent=msg;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),3000);}
+
+// ── FOLD COUNTDOWN ──────────────────────────────────
+function startFold(){
+  showScreen('fold');
+  let secs=60;
+  const instructions=['GRAB PAPER — START FOLDING!','FOLD IT IN HALF!','FOLD THE CORNERS IN!','FOLD DOWN THE WINGS!','ALMOST DONE — SHARPEN THOSE EDGES!','FINISHING TOUCHES...'];
+  let instrIdx=0;
+  
+  document.getElementById('foldTimer').textContent=secs;
+  document.getElementById('foldProgress').style.width='100%';
+
+  foldInterval=setInterval(()=>{
+    secs--;
+    const timer=document.getElementById('foldTimer');
+    timer.textContent=secs;
+    timer.className='big'+(secs<=10?' warning':'');
+    document.getElementById('foldProgress').style.width=(secs/60*100)+'%';
+    document.getElementById('foldProgress').style.background=secs<=10?'var(--ms)':secs<=20?'var(--mp)':'var(--gold)';
+
+    // Update instruction
+    const newIdx=Math.floor((60-secs)/10);
+    if(newIdx!==instrIdx && newIdx<instructions.length){instrIdx=newIdx;document.getElementById('foldInstruction').textContent=instructions[instrIdx];}
+
+    if(secs<=0){clearInterval(foldInterval);showScreen('holdup');}
+  },1000);
+}
+
+// ── LAUNCH SEQUENCE ─────────────────────────────────
+function startLaunch(){
+  showScreen('launch');
+  let count=3;
+  document.getElementById('launchNum').textContent=count;
+
+  const interval=setInterval(()=>{
+    count--;
+    const el=document.getElementById('launchNum');
+    if(count>0){
+      el.textContent=count;
+      el.style.animation='none';
+      el.offsetHeight; // reflow
+      el.style.animation='launchPop .3s ease';
+    } else {
+      clearInterval(interval);
+      showScreen('throwit');
+      setTimeout(()=>goToVoteSetup(),2500);
+    }
+  },1000);
+}
+
+function goToVoteSetup(){
+  // Initialize with 4 name fields
+  const grid=document.getElementById('namesGrid');
+  grid.innerHTML='';
+  for(let i=0;i<4;i++) addNameField();
+  showScreen('voteSetup');
+}
+
+// ── VOTING ───────────────────────────────────────────
+function addNameField(){
+  const grid=document.getElementById('namesGrid');
+  const inp=document.createElement('input');
+  inp.className='name-inp';
+  inp.placeholder='Player name...';
+  inp.autocomplete='off';
+  grid.appendChild(inp);
+}
+
+function startVoting(){
+  const inputs=[...document.querySelectorAll('.name-inp')];
+  const names=inputs.map(i=>i.value.trim()).filter(Boolean);
+  if(names.length<2){showErr('Add at least 2 players!');return;}
+
+  votes={};
+  names.forEach(n=>votes[n]=0);
+
+  const cards=document.getElementById('voteCards');
+  cards.innerHTML=names.map(n=>`
+    <div class="vote-card" id="vc_${n}" onclick="vote('${n}')">
+      <div class="vote-name">${n}</div>
+      <div class="vote-count" id="vcount_${n}">0 votes</div>
+      <div class="vote-bar"><div class="vote-bar-fill" id="vbar_${n}" style="width:0%"></div></div>
+    </div>`).join('');
+  showScreen('voting');
+}
+
+function vote(name){
+  votes[name]=(votes[name]||0)+1;
+  const total=Object.values(votes).reduce((a,b)=>a+b,0);
+  Object.entries(votes).forEach(([n,v])=>{
+    const pct=total>0?Math.round(v/total*100):0;
+    document.getElementById('vcount_'+n).textContent=v+' vote'+(v!==1?'s':'');
+    document.getElementById('vbar_'+n).style.width=pct+'%';
+  });
+  // Flash the card
+  const card=document.getElementById('vc_'+name);
+  card.classList.add('voted');
+  setTimeout(()=>card.classList.remove('voted'),500);
+}
+
+function showWinner(){
+  const winner=Object.entries(votes).sort((a,b)=>b[1]-a[1])[0];
+  if(!winner||winner[1]===0){showErr('No votes yet!');return;}
+  document.getElementById('winnerName').textContent=winner[0].toUpperCase();
+  showScreen('winner');
+}
+
+function playAgain(){showScreen('intro');}
+</script>
+</body>
+</html>
