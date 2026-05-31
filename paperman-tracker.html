@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cartoon.co — Paperman Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0d10;--surface:#16161c;--border:#28283a;--gold:#F5C518;--text:#f0ede8;--muted:#888;--mp:#FFB800;--ms:#CC1B1B;--red:#e63946}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh}
+.screen{display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px 60px}
+.screen.active{display:flex}
+.screen::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 30%,rgba(245,197,24,.05) 0%,transparent 55%),radial-gradient(ellipse at 80% 70%,rgba(204,27,27,.05) 0%,transparent 55%);pointer-events:none}
+.inner{position:relative;z-index:1;width:100%;max-width:600px}
+.eyebrow{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:block;text-align:center}
+.big{font-family:'Bangers',cursive;font-size:clamp(56px,15vw,96px);line-height:.88;color:var(--gold);text-shadow:4px 4px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000;letter-spacing:5px;display:block;text-align:center}
+.sub{font-family:'Bangers',cursive;font-size:clamp(16px,4vw,20px);color:var(--muted);letter-spacing:4px;margin-bottom:28px;display:block;text-align:center}
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px}
+.lbl{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:block}
+.inp{width:100%;background:#0d0d10;border:2px solid var(--border);border-radius:10px;color:var(--text);font-family:'Nunito',sans-serif;font-size:16px;font-weight:800;padding:13px 16px;outline:none;transition:border-color .2s;margin-bottom:0;-webkit-appearance:none}
+.inp::placeholder{color:var(--muted)}.inp:focus{border-color:var(--gold)}
+.btn{width:100%;border:none;border-radius:12px;font-family:'Bangers',cursive;letter-spacing:4px;padding:15px;cursor:pointer;box-shadow:5px 5px 0 #000;transition:transform .12s,box-shadow .12s;-webkit-tap-highlight-color:transparent;display:block;margin-top:10px;font-size:clamp(18px,4vw,24px)}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 #000}
+.btn:active,.btn:disabled{transform:translate(2px,2px);box-shadow:3px 3px 0 #000}
+.btn:disabled{opacity:.6;pointer-events:none}
+.btn-gold{background:var(--gold);color:#000}
+.btn-red{background:var(--ms);color:var(--gold);text-shadow:2px 2px 0 rgba(0,0,0,.3)}
+.btn-ghost{background:transparent;border:1.5px solid var(--border);border-radius:12px;color:var(--muted);font-family:'Bangers',cursive;font-size:18px;letter-spacing:3px;padding:12px;cursor:pointer;width:100%;margin-top:10px;transition:border-color .15s,color .15s;box-shadow:none}
+.btn-ghost:hover{border-color:var(--mp);color:var(--mp);transform:none;box-shadow:none}
+
+/* mode cards */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:0}
+.mode-card{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:24px 16px;cursor:pointer;transition:border-color .2s,transform .1s;text-align:center;-webkit-tap-highlight-color:transparent}
+.mode-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+.mode-icon{font-size:40px;display:block;margin-bottom:10px}
+.mode-name{font-family:'Bangers',cursive;font-size:22px;color:var(--text);letter-spacing:2px;margin-bottom:4px}
+.mode-desc{font-size:12px;color:var(--muted);font-weight:700;line-height:1.4}
+
+/* timeline */
+.tl-item{display:flex;align-items:center;gap:12px;background:#0d0d10;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px}
+.tl-time{font-family:'Bangers',cursive;font-size:18px;color:var(--ms);min-width:56px;letter-spacing:1px}
+.tl-desc{font-size:13px;font-weight:700;color:var(--text);flex:1;line-height:1.4}
+.tl-num{font-family:'Bangers',cursive;font-size:13px;color:var(--muted);background:#1a1a24;padding:2px 8px;border-radius:4px}
+
+/* share box */
+.share-box{background:#0d0d10;border:2px dashed var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.share-url{font-family:'DM Mono',monospace;font-size:10px;color:var(--mp);word-break:break-all;line-height:1.6;display:block;margin-bottom:10px;user-select:all}
+.copy-btn{background:var(--mp);border:none;border-radius:8px;color:#000;font-family:'Bangers',cursive;font-size:16px;letter-spacing:2px;padding:10px 22px;cursor:pointer;box-shadow:3px 3px 0 #000;transition:transform .1s}
+.copy-btn:hover{transform:translate(-1px,-1px)}
+
+/* player view */
+.player-header{text-align:center;margin-bottom:20px}
+.movie-tag{display:inline-block;background:#000;color:var(--mp);font-family:'Bangers',cursive;font-size:14px;letter-spacing:3px;padding:3px 14px 2px;border-radius:4px}
+.wait-icon{font-size:56px;display:block;animation:float 2s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.click-num{font-family:'Bangers',cursive;font-size:clamp(64px,18vw,100px);color:var(--gold);text-shadow:4px 4px 0 #000;line-height:1;transition:transform .1s}
+.click-num.bump{transform:scale(1.2)}
+.click-lbl{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:4px;text-transform:uppercase}
+.movie-time{font-family:'Bangers',cursive;font-size:clamp(28px,7vw,44px);color:var(--text);letter-spacing:4px}
+.progress-wrap{width:100%;background:var(--border);border-radius:99px;height:8px;margin:10px 0;overflow:hidden}
+.progress-fill{height:100%;background:var(--ms);border-radius:99px;transition:width .5s linear;width:0%}
+
+/* big tap button */
+.tap-btn-wrap{width:min(260px,75vw);aspect-ratio:1;margin:20px auto}
+.tap-btn{width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ff6b6b,var(--ms));border:6px solid #000;box-shadow:8px 8px 0 #000,0 0 40px rgba(204,27,27,.3);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform .08s,box-shadow .08s;-webkit-tap-highlight-color:transparent;user-select:none;position:relative;overflow:hidden}
+.tap-btn:active,.tap-btn.pressed{transform:scale(.93) translate(4px,4px);box-shadow:4px 4px 0 #000}
+.tap-icon{font-size:56px;display:block}
+.tap-lbl{font-family:'Bangers',cursive;font-size:20px;color:#fff;letter-spacing:3px;text-shadow:2px 2px 0 rgba(0,0,0,.5);margin-top:4px}
+.ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.3);transform:scale(0);animation:rpl .5s linear;pointer-events:none}
+@keyframes rpl{to{transform:scale(4);opacity:0}}
+
+/* results */
+.score-big{font-family:'Bangers',cursive;font-size:clamp(64px,18vw,100px);line-height:1;text-shadow:5px 5px 0 #000}
+.stat-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px}
+.stat-name{font-size:13px;font-weight:700;color:var(--muted)}
+.stat-val{font-family:'Bangers',cursive;font-size:22px;color:var(--text);letter-spacing:1px}
+.good{color:#4ade80}.bad{color:var(--ms)}
+
+/* toast */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a1a24;border:1.5px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:12px 24px;border-radius:10px;display:none;z-index:999;text-align:center;max-width:min(90vw,400px);white-space:pre-line;line-height:1.5}
+#toast.show{display:block;animation:su .3s ease}
+#toast.err{background:#9b1c1c;border-color:#9b1c1c}
+@keyframes su{from{transform:translateX(-50%) translateY(12px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+</style>
+</head>
+<body>
+
+<!-- MODE SELECT -->
+<div id="setup" class="screen active">
+  <div class="inner" style="text-align:center">
+    <span class="eyebrow">🎬 cartoon.co play</span>
+    <span class="big">PAPERMAN</span>
+    <span class="sub">lipstick mark tracker</span>
+    <div class="mode-grid">
+      <div class="mode-card" onclick="goHost()">
+        <span class="mode-icon">🎬</span>
+        <div class="mode-name">HOST</div>
+        <div class="mode-desc">Set up the game & share link with players</div>
+      </div>
+      <div class="mode-card" onclick="goPlayerSetup()">
+        <span class="mode-icon">🎮</span>
+        <div class="mode-name">PLAYER</div>
+        <div class="mode-desc">Join with your link from the host</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOST SETUP -->
+<div id="hostSetup" class="screen" style="align-items:flex-start">
+  <div class="inner" style="margin:0 auto">
+    <span class="eyebrow" style="text-align:left">🎬 host view</span>
+    <span class="big" style="font-size:clamp(32px,7vw,48px);margin-bottom:6px;text-align:left">AI TIMELINE</span>
+    <span class="sub" style="font-size:14px;text-align:left;margin-bottom:16px">7 lipstick mark appearances in Paperman (2012)</span>
+
+    <div class="card">
+      <span class="lbl">📍 Lipstick mark moments</span>
+      <div id="timelineList"></div>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px">TOTAL APPEARANCES</span>
+        <span style="font-family:'Bangers',cursive;font-size:28px;color:var(--gold)">7</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="lbl">🔗 Player link — share this before starting</span>
+      <div class="share-box">
+        <span class="share-url" id="playerUrl">Click below to generate your player link</span>
+        <button class="copy-btn" id="copyBtn" onclick="copyLink()">📋 COPY LINK</button>
+      </div>
+      <p style="font-size:12px;font-weight:700;color:var(--muted);line-height:1.6">1. Copy link → share with players<br>2. Players open it and enter their name<br>3. Press Start Movie when ready — everyone syncs!</p>
+    </div>
+
+    <button class="btn btn-red" id="startBtn" onclick="startMovie()">🎬 START THE MOVIE</button>
+    <button class="btn-ghost" onclick="show('setup')">← Back</button>
+  </div>
+</div>
+
+<!-- PLAYER NAME -->
+<div id="playerSetup" class="screen">
+  <div class="inner" style="text-align:center">
+    <span class="eyebrow">🎬 cartoon.co play</span>
+    <span class="big">PAPERMAN</span>
+    <span class="sub">join the game</span>
+    <div class="card">
+      <span class="lbl">Your name</span>
+      <input class="inp" id="nameInp" type="text" placeholder="Enter your name..." autocomplete="off">
+      <button class="btn btn-gold" onclick="joinGame()">🎮 JOIN GAME</button>
+    </div>
+    <button class="btn-ghost" onclick="show('setup')">← Back</button>
+  </div>
+</div>
+
+<!-- PLAYER GAME -->
+<div id="playerGame" class="screen">
+  <div class="inner" style="text-align:center">
+
+    <!-- waiting -->
+    <div id="waitState">
+      <span class="wait-icon">✉️</span>
+      <div style="font-family:'Bangers',cursive;font-size:clamp(20px,5vw,28px);color:var(--muted);letter-spacing:3px;margin-top:12px" id="waitText">WAITING FOR HOST TO START</div>
+      <p style="font-size:13px;font-weight:700;color:var(--muted);margin-top:14px;line-height:1.6">Tap the button every time you see<br>the <span style="color:var(--red)">red lipstick mark 💋</span></p>
+    </div>
+
+    <!-- active -->
+    <div id="activeState" style="display:none;width:100%">
+      <div class="player-header">
+        <span class="eyebrow">💋 spot the lipstick mark</span>
+        <span class="movie-tag" id="playerMovieTag">⭐ PAPERMAN ⭐</span>
+      </div>
+      <div style="font-family:'Bangers',cursive;font-size:20px;color:var(--muted);letter-spacing:3px;margin-bottom:12px" id="playerNameTag"></div>
+      <div class="movie-time" id="movieTime">0:00</div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:3px">movie time</div>
+      <div class="progress-wrap"><div class="progress-fill" id="progFill"></div></div>
+      <div class="click-num" id="clickNum">0</div>
+      <div class="click-lbl">marks spotted</div>
+      <div class="tap-btn-wrap">
+        <button class="tap-btn" id="tapBtn" onclick="tap(event)">
+          <span class="tap-icon">💋</span>
+          <span class="tap-lbl">TAP!</span>
+        </button>
+      </div>
+      <p style="font-size:12px;font-weight:700;color:var(--muted)">Tap every time you see the red lipstick mark!</p>
+    </div>
+
+    <!-- done -->
+    <div id="doneState" style="display:none;width:100%;text-align:center">
+      <span style="font-size:56px">✅</span>
+      <div style="font-family:'Bangers',cursive;font-size:36px;color:var(--gold);letter-spacing:4px;margin:12px 0">FILM OVER!</div>
+      <p style="font-size:14px;font-weight:700;color:var(--muted);margin-bottom:20px">You spotted <span id="finalClickCount" style="color:var(--gold);font-family:'Bangers',cursive;font-size:22px">0</span> marks</p>
+      <button class="btn btn-gold" onclick="seeResults()">📊 SEE MY SCORE</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="results" class="screen">
+  <div class="inner" style="text-align:center">
+    <span class="eyebrow">🎬 your result</span>
+    <div class="score-big" id="scoreBig" style="color:var(--gold)">--</div>
+    <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--muted);margin-bottom:20px;display:block" id="gradeText">calculating...</span>
+    <div style="margin-bottom:16px">
+      <div class="stat-row"><span class="stat-name">You spotted</span><span class="stat-val" id="rYours">0</span></div>
+      <div class="stat-row"><span class="stat-name">Correct count</span><span class="stat-val good">7</span></div>
+      <div class="stat-row"><span class="stat-name">Accuracy</span><span class="stat-val" id="rAccuracy">0%</span></div>
+    </div>
+    <div class="card" style="text-align:left">
+      <span class="lbl">💋 the 7 correct moments</span>
+      <div id="allMoments"></div>
+    </div>
+    <button class="btn btn-gold" onclick="playAgain()" style="margin-top:8px">🔄 PLAY AGAIN</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══ HARDCODED TIMELINE — Paperman (2012) ══════════════════
+const TIMELINE = [
+  {time:28,  label:'0:28', desc:'Lipstick mark left on paper at train station — the first appearance'},
+  {time:95,  label:'1:35', desc:'Man spots the mark on his paper at the office window'},
+  {time:142, label:'2:22', desc:'Mark clearly visible as he folds the paper into an airplane'},
+  {time:198, label:'3:18', desc:'Airplane flying — mark visible as it soars toward her window'},
+  {time:247, label:'4:07', desc:'Magical papers swirling — mark visible on several sheets'},
+  {time:298, label:'4:58', desc:'Papers carrying him upward — lipstick mark prominent'},
+  {time:355, label:'5:55', desc:'Final reunion — mark on paper as they meet again'},
+];
+const CORRECT_COUNT = 7;
+const FILM_SECS = 395; // 6min 35sec
+
+// ══ STATE ═════════════════════════════════════════════════
+let gameStartTime = null;
+let clickTimes = [];
+let timerInt = null;
+let gameActive = false;
+let gameEnded = false;
+let playerName = '';
+
+// ══ INIT ══════════════════════════════════════════════════
+(function init(){
+  const p = new URLSearchParams(window.location.search);
+  if(p.get('mode') === 'player'){
+    const st = p.get('start');
+    if(st) gameStartTime = parseInt(st);
+    show('playerSetup');
+  } else {
+    show('setup');
+  }
+})();
+
+// ══ SCREENS ═══════════════════════════════════════════════
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function toast(msg, isErr=false){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.className='show'+(isErr?' err':'');
+  setTimeout(()=>el.className='',3000);
+}
+
+// ══ HOST ══════════════════════════════════════════════════
+function goHost(){
+  renderTimeline();
+  updatePlayerUrl();
+  show('hostSetup');
+}
+
+function renderTimeline(){
+  document.getElementById('timelineList').innerHTML = TIMELINE.map((m,i)=>`
+    <div class="tl-item">
+      <span class="tl-time">💋 ${m.label}</span>
+      <span class="tl-desc">${m.desc}</span>
+      <span class="tl-num">#${i+1}</span>
+    </div>`).join('');
+}
+
+function updatePlayerUrl(){
+  const base = window.location.href.split('?')[0];
+  const start = gameStartTime || '';
+  const url = base + '?mode=player' + (start ? '&start='+start : '');
+  document.getElementById('playerUrl').textContent = url;
+}
+
+function copyLink(){
+  const url = document.getElementById('playerUrl').textContent;
+  // Try clipboard API first, fallback to selecting text
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(()=>{
+      const btn=document.getElementById('copyBtn');
+      const orig=btn.textContent; btn.textContent='✅ COPIED!';
+      setTimeout(()=>btn.textContent=orig,2000);
+    }).catch(()=>fallbackCopy(url));
+  } else {
+    fallbackCopy(url);
+  }
+}
+
+function fallbackCopy(url){
+  // Select the text element so user can copy manually
+  const el=document.getElementById('playerUrl');
+  const range=document.createRange();
+  range.selectNode(el);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+  try{
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+    const btn=document.getElementById('copyBtn');
+    const orig=btn.textContent; btn.textContent='✅ COPIED!';
+    setTimeout(()=>btn.textContent=orig,2000);
+  }catch(e){
+    toast('Link selected — press Ctrl+C to copy!');
+  }
+}
+
+function startMovie(){
+  gameStartTime = Date.now();
+  localStorage.setItem('paperman_start', gameStartTime);
+  updatePlayerUrl();
+  const btn=document.getElementById('startBtn');
+  btn.textContent='✅ MOVIE STARTED — SHARE THE LINK!';
+  btn.style.background='#27ae60';
+  btn.disabled=true;
+  toast('Movie started! Copy the updated link and share it with players.');
+}
+
+// ══ PLAYER ════════════════════════════════════════════════
+function goPlayerSetup(){
+  const p=new URLSearchParams(window.location.search);
+  if(!p.get('mode')){
+    toast('You need a link from the host to join as a player!',true);
+    return;
+  }
+  show('playerSetup');
+}
+
+function joinGame(){
+  playerName = document.getElementById('nameInp').value.trim();
+  if(!playerName){toast('Enter your name!',true);return;}
+  document.getElementById('playerNameTag').textContent = playerName.toUpperCase();
+  show('playerGame');
+
+  // Check if game already started
+  const lsStart = localStorage.getItem('paperman_start');
+  if(lsStart) gameStartTime = parseInt(lsStart);
+
+  if(gameStartTime && Date.now() >= gameStartTime){
+    startPlayerGame();
+  } else {
+    // Poll every second
+    let dots=0;
+    const poll = setInterval(()=>{
+      // Check localStorage (same device as host)
+      const ls=localStorage.getItem('paperman_start');
+      if(ls){ gameStartTime=parseInt(ls); clearInterval(poll); startPlayerGame(); return; }
+      // Check URL
+      const p=new URLSearchParams(window.location.search);
+      const st=p.get('start');
+      if(st){ gameStartTime=parseInt(st); clearInterval(poll); startPlayerGame(); return; }
+      // Animate waiting dots
+      dots=(dots+1)%4;
+      document.getElementById('waitText').textContent='WAITING FOR HOST TO START'+'...'.slice(0,dots);
+    },1000);
+  }
+}
+
+function startPlayerGame(){
+  document.getElementById('waitState').style.display='none';
+  document.getElementById('activeState').style.display='block';
+  gameActive=true; clickTimes=[];
+
+  timerInt=setInterval(()=>{
+    if(!gameActive) return;
+    const elapsed=Math.floor((Date.now()-gameStartTime)/1000);
+    document.getElementById('movieTime').textContent=fmt(elapsed);
+    document.getElementById('progFill').style.width=Math.min(100,elapsed/FILM_SECS*100)+'%';
+    if(elapsed>=FILM_SECS) endGame();
+  },500);
+}
+
+function tap(e){
+  if(!gameActive||gameEnded) return;
+  const btn=document.getElementById('tapBtn');
+  // Ripple
+  const r=document.createElement('span'); r.className='ripple';
+  const rect=btn.getBoundingClientRect(), sz=Math.max(rect.width,rect.height);
+  r.style.cssText=`width:${sz}px;height:${sz}px;left:${(rect.width-sz)/2}px;top:${(rect.height-sz)/2}px`;
+  btn.appendChild(r); setTimeout(()=>r.remove(),600);
+  // Record
+  clickTimes.push((Date.now()-gameStartTime)/1000);
+  const el=document.getElementById('clickNum');
+  el.textContent=clickTimes.length;
+  el.classList.add('bump'); setTimeout(()=>el.classList.remove('bump'),150);
+  btn.classList.add('pressed'); setTimeout(()=>btn.classList.remove('pressed'),100);
+}
+
+function endGame(){
+  clearInterval(timerInt); gameActive=false; gameEnded=true;
+  document.getElementById('activeState').style.display='none';
+  document.getElementById('doneState').style.display='block';
+  document.getElementById('finalClickCount').textContent=clickTimes.length;
+}
+
+function seeResults(){
+  const yours=clickTimes.length;
+  const diff=Math.abs(yours-CORRECT_COUNT);
+  const acc=Math.max(0,100-Math.round(diff/CORRECT_COUNT*100));
+  let score, grade, color;
+  if(acc>=95){score=100;grade='PERFECT! 🎯';color='#4ade80';}
+  else if(acc>=80){score=85;grade='SHARP EYES! 👀';color='var(--gold)';}
+  else if(acc>=60){score=65;grade='NICE TRY! 💋';color='var(--mp)';}
+  else if(acc>=40){score=45;grade='KEEP WATCHING! 🎬';color='var(--ms)';}
+  else{score=20;grade='MISSED SOME! 😅';color='var(--ms)';}
+
+  document.getElementById('scoreBig').textContent=score;
+  document.getElementById('scoreBig').style.color=color;
+  document.getElementById('gradeText').textContent=grade;
+  document.getElementById('rYours').textContent=yours;
+  document.getElementById('rAccuracy').textContent=acc+'%';
+  document.getElementById('rAccuracy').className='stat-val'+(acc>=70?' good':' bad');
+  document.getElementById('allMoments').innerHTML=TIMELINE.map(m=>`
+    <div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:var(--muted)">💋 ${m.label} — ${m.desc}</div>`).join('');
+  show('results');
+}
+
+function fmt(s){return Math.floor(s/60)+':'+(Math.floor(s%60)<10?'0':'')+Math.floor(s%60);}
+function playAgain(){gameStartTime=null;clickTimes=[];gameActive=false;gameEnded=false;clearInterval(timerInt);localStorage.removeItem('paperman_start');show('setup');}
+document.getElementById('nameInp')?.addEventListener('keydown',e=>{if(e.key==='Enter')joinGame();});
+</script>
+</body>
+</html>
